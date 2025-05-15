@@ -1,0 +1,242 @@
+Plot Report
+-----------
+
+Report Written:     02:08 Tuesday, April 15, 2025
+Design Path:        D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15.pcb
+Design Title:       
+Created:            2022/04/10 3:23:23
+Last Saved:         2025/04/15 1:58:32
+Editing Time:       1963 min
+Units:              mm (precision 3)
+
+
+Device Settings
+===============
+
+
+Gerber Settings
+===============
+
+    Leading zero suppression.
+    G01 assumed throughout.
+    Line termination <*> <CR> <LF>.
+    3.5 format absolute mm.
+    Format commands defined in Gerber file.
+    Aperture table defined in Gerber file.
+    Hardware arcs allowed.
+
+
+Drill Settings
+==============
+
+    Excellon Format 1
+    Format 3.4 absolute in mm.
+    Zero suppression Leading
+
+
+
+Plots Output
+============
+
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Top Silkscreen.gbr
+
+    Layers:
+    ------------------
+    Top Silkscreen
+
+    D-Code Shape  (mm)
+    ---------------------
+    D10    Round 0.127
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Top Copper.gbr
+
+    Layers:
+    --------------
+    Top Copper
+
+    D-Code Shape  (mm)
+    ----------------------------------------------
+    D11    Round 0.305
+    D12    Round 0.254
+    D13    Round 0.800
+    D14    Round 2.200
+    D15    Round 0.600
+    D16    Round 1.016
+    D17    Rectangle 1.400 X 1.420
+    D18    Round 1.400
+    D19    Rectangle 1.350 X 3.000  Rotation 90
+    D70    Round 1.524
+    D71    Round 1.800
+    D20    Oval 1.300 X 2.000
+    D21    Bullet 0.800 X 0.600  Rotation 180
+    D22    Bullet 0.800 X 0.600
+    D23    Rectangle 1.400 X 1.420  Rotation 90
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Top Solder Mask.gbr
+
+    Layers:
+    -------------------
+    Top Solder Mask
+
+    D-Code Shape  (mm)
+    ----------------------------------------------
+    D24    Rectangle 1.552 X 1.572
+    D25    Round 1.552
+    D26    Rectangle 1.502 X 3.152  Rotation 90
+    D27    Round 1.676
+    D28    Round 1.952
+    D29    Oval 1.452 X 2.152
+    D72    Bullet 0.952 X 0.752  Rotation 180
+    D73    Round 0.952
+    D74    Bullet 0.952 X 0.752
+    D75    Rectangle 1.552 X 1.572  Rotation 90
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Bottom Copper.gbr
+
+    Layers:
+    -----------------
+    Bottom Copper
+
+    D-Code Shape  (mm)
+    ----------------------------------------------
+    D11    Round 0.305
+    D12    Round 0.254
+    D13    Round 0.800
+    D14    Round 2.200
+    D16    Round 1.016
+    D17    Rectangle 1.400 X 1.420
+    D18    Round 1.400
+    D19    Rectangle 1.350 X 3.000  Rotation 90
+    D70    Round 1.524
+    D71    Round 1.800
+    D20    Oval 1.300 X 2.000
+    D23    Rectangle 1.400 X 1.420  Rotation 90
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Bottom Solder Mask.gbr
+
+    Layers:
+    ----------------------
+    Bottom Solder Mask
+
+    D-Code Shape  (mm)
+    ----------------------------------------------
+    D24    Rectangle 1.552 X 1.572
+    D25    Round 1.552
+    D26    Rectangle 1.502 X 3.152  Rotation 90
+    D27    Round 1.676
+    D28    Round 1.952
+    D29    Oval 1.452 X 2.152
+    D75    Rectangle 1.552 X 1.572  Rotation 90
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Gerber Drill Data - [Through Hole].gbr
+
+    Layers:
+    ------------------
+    [Through Hole]
+
+    D-Code Shape  (mm)
+    ---------------------
+    D76    Round 1.500
+    D77    Round 0.610
+    D78    Round 0.900
+    D79    Round 1.000
+    D80    Round 1.120
+    D81    Round 0.600
+
+NC Drill Output
+===============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - NC Drill Data - [Through Hole].drl
+
+    Output:
+    ---------------------------
+    Plated Round Drill Holes
+    Plated Slots
+
+    Tool  Size      Count   ID
+    ---------------------------------
+    T001  0.6000 mm 2     F
+    T002  0.6096 mm 26    B
+    T003  0.9000 mm 22    C
+    T004  1.0000 mm 37    D
+    T005  1.1200 mm 2     E
+    T006  1.5000 mm 4     A
+    ---------------------------------
+    Total           93
+    ---------------------------------
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - NC Drill Data - [Through Hole] (Unplated).drl
+
+    Output:
+    -----------------------------
+    Unplated Round Drill Holes
+    Unplated Slots
+
+    Tool  Size Count   ID
+    ----------------------------
+    ----------------------------
+    Total      0
+    ----------------------------
+
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Drill Ident Drawing - [Through Hole].gbr
+
+    Layers:
+    ------------------
+    [Through Hole]
+
+
+Drill Ident Drawing
+===================
+
+    Drill Plated Size  Shape ID
+    ------------------------------------
+    1.500 Y      2.540 Round A
+    0.610 Y      2.540 Round B
+    0.900 Y      2.540 Round C
+    1.000 Y      2.540 Round D
+    1.120 Y      2.540 Round E
+    0.600 Y      2.540 Round F
+
+    D-Code Shape  (mm)
+    ---------------------
+    D10    Round 0.127
+    D82    Round 2.540
+
+Gerber Output
+=============
+
+D:\git\github\CanSat2025_Sample\Schematic\CanSat2025_04_15 - Documentation.gbr
+
+    Layers:
+    ------------------
+    Documentation
+    Board Outlines
+
+    D-Code Shape  (mm)
+    ---------------------
+    D11    Round 0.305
+
+End Of Report.
