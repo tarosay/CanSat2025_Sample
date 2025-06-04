@@ -15,6 +15,11 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     int receivedByte = Serial.read();
+    Serial1.write(receivedByte);
+  }
+
+  if (Serial1.available() > 0) {
+    int receivedByte = Serial1.read();
     Serial2.write(receivedByte);
   }
 
