@@ -8,7 +8,14 @@ void setup() {
   Serial.println(F("Stamp S3 OpenLog Sample1_19200"));
   Serial1.println(F("Stamp S3 OpenLog Sample1_19200"));
 }
-
+int i = 0;
 void loop() {
-  delay(10);
+  delay(5000);
+
+  Serial.print(i);
+  Serial.println(F(" Stamp S3 OpenLog Sample1_19200"));
+
+  Serial1.print(i);
+  Serial1.println(F(" Stamp S3 OpenLog Sample1_19200"));
+  i++;
 }
