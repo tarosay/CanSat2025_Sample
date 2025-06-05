@@ -5,27 +5,22 @@
 
 void setup() {
   Serial.begin(115200);
+  delay(1500);
 
   pinMode(A_OUT, INPUT);
   pinMode(D_OUT, INPUT);
 
-  delay(500);
   Serial.println("Stamp-S3 LIGHT Demo Sample");
 }
 
 void loop() {
-  Serial.print("0:");
-  Serial.print(0);
-  Serial.print(",");
-  Serial.print("3.5:");
-  Serial.print(3.5);
-  Serial.print(",");
-  float vinput = 3.3 * analogRead(A_OUT) / 4095;  //電圧Vに変換
-  Serial.print("電圧:");
-  Serial.print(vinput);
-  Serial.print(",");
-  Serial.print("明暗:");
-  Serial.println(digitalRead(D_OUT));
+  float vInput = 3.3 * analogRead(A_OUT) / 4095;  //電圧Vに変換
+  int dInput = digitalRead(D_OUT);
+
+  String log = "";
+  log += String(vInput) + "," + String(dInput);
+  log += ",3.5,0";
+  Serial.println(log);
 
   delay(100);
 }

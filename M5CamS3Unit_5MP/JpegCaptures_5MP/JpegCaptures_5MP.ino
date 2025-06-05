@@ -5,7 +5,6 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include "camera.h"
-#include "MakeAVI.h"
 
 // SDカードのチップセレクトピン
 #define SD_CS 9
@@ -48,24 +47,21 @@ void setup() {
   }
   Serial.println("カメラを初期化しました");
 
+  uint32_t width, height;
   // camera_fb_t* fb = esp_camera_fb_get();
   // if (!fb) {
   //   Serial.println("フレームバッファの取得に失敗しました");
   //   return;
   // }
   // Serial.println("フレームバッファを取得しました");
-  // uint32_t width = (uint32_t)fb->width;
-  // uint32_t height = (uint32_t)fb->height;
+  // width = (uint32_t)fb->width;
+  // height = (uint32_t)fb->height;
   // esp_camera_fb_return(fb);
-
   // Serial.print(width);
   // Serial.print(" x ");
   // Serial.println(height);
 
-  uint32_t width, height;
   String folder;
-
-  Serial.println("キャプチャ開始");
   uint32_t maxJpegSize = captureFrames(&width, &height, folder);
   Serial.println("キャプチャ終了");
 
@@ -75,10 +71,6 @@ void setup() {
   Serial.println(folder);
   Serial.println(maxJpegSize);
 
-  // キャプチャしたフレームをAVIファイルに結合
-  CreateAviFromJpegs(folder, FRAME_COUNT, FPS, width, height, maxJpegSize);
-  Serial.println("AVIファイル作成終了");
-
   ////LED点灯
   //digitalWrite(LED_GPIO_NUM, LOW);
 }
@@ -86,9 +78,9 @@ void setup() {
 bool IsCaptuer = true;
 void loop() {
   digitalWrite(GPIO_LED, LOW);
-  delay(500);
+  delay(250);
   digitalWrite(GPIO_LED, HIGH);
-  delay(500);
+  delay(250);
 
   // if (digitalRead(GPIO_0) == HIGH && IsCaptuer == true) {
   //   digitalWrite(GPIO_LED, HIGH);  //LED消灯

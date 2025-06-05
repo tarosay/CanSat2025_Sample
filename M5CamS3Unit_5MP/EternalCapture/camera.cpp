@@ -4,8 +4,10 @@
 #include <SPI.h>
 #include <esp_system.h>
 
+#define CAMERA_MODEL_M5STACK_CAMS3_UNIT  // Has PSRAM
 #include "camera_pins.h"
 #include "camera.h"
+#define CAMERA_MODEL_M5STACK_CAMS3_UNIT  // Has PSRAM
 
 bool cameraInit() {
   // カメラ初期化
@@ -30,19 +32,38 @@ bool cameraInit() {
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-  //config.frame_size = FRAMESIZE_QVGA;  // フレームサイズをQVGAに設定
   config.frame_size = FRAMESIZE_QVGA;
   //config.frame_size = FRAMESIZE_XGA;
-  //config.jpeg_quality = 12;  // JPEG品質を調整
-  //config.fb_count = 1;
-  //config.grab_mode = CAMERA_GRAB_LATEST;
 
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.fb_location = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 12;
   config.fb_count = 1;
 
+  if (config.pixel_format == PIXFORMAT_JPEG) {
+    if (psramFound()) {
+      config.jpeg_quality = 10;
+#ifdef CAMERA_MODEL_M5STACK_CAMS3_UNIT
+      config.fb_count = 1;
+#else
+      config.fb_count = 2;
+#endif
+      config.grab_mode = CAMERA_GRAB_LATEST;
+    } else {
+      // Limit the frame size when PSRAM is not available
+      config.frame_size = FRAMESIZE_SVGA;
+      config.fb_location = CAMERA_FB_IN_DRAM;
+    }
+  } else {
+    // Best option for face detection/recognition
+    config.frame_size = FRAMESIZE_240X240;
+#if CONFIG_IDF_TARGET_ESP32S3
+    config.fb_count = 2;
+#endif
+  }
 
+  // camera init
+  Serial.println("カメラの初期化をします");
   while (true) {
     if (esp_camera_init(&config) != ESP_OK) {
       Serial.println("カメラの初期化に失敗しました");
@@ -54,25 +75,57 @@ bool cameraInit() {
   }
 
   // カメラセンサーの取得
+  Serial.println("カメラセンサーを取得します");
   sensor_t* s = esp_camera_sensor_get();
   if (s == NULL) {
     Serial.println("センサーの取得に失敗しました");
     return false;
   }
 
-  // ホワイトバランスを自動に設定
-  s->set_whitebal(s, 1);  // 0 = Off, 1 = On
+  // initial sensors are flipped vertically and colors are a bit saturated
+  if (s->id.PID == OV3660_PID) {
+    Serial.println("OV3660_PIDです");
+    s->set_vflip(s, 1);        // flip it back
+    s->set_brightness(s, 1);   // up the brightness just a bit
+    s->set_saturation(s, -2);  // lower the saturation
+  }
 
-  s->set_vflip(s, 0);  // 0 = 正常, 1 = 上下反転
-                       //s->set_hmirror(s, 0);  // 0 = 正常, 1 = 左右反転
+  // drop down frame size for higher initial frame rate
+  if (config.pixel_format == PIXFORMAT_JPEG) {
+    Serial.println("PIXFORMAT_JPEGです");
+    s->set_framesize(s, FRAMESIZE_QVGA);
+  }
+
+#if defined(CAMERA_MODEL_M5STACK_WIDE) || defined(CAMERA_MODEL_M5STACK_ESP32CAM)
+  Serial.println("CAMERA_MODEL_M5STACK_WIDE || CAMERA_MODEL_M5STACK_ESP32CAM です");
+  s->set_vflip(s, 1);
+  s->set_hmirror(s, 1);
+#endif
+
+#if defined(CAMERA_MODEL_ESP32S3_EYE)
+  Serial.println("CAMERA_MODEL_ESP32S3_EYE です");
+  s->set_vflip(s, 1);
+#endif
+
+  // ホワイトバランスの設定をすると暴走します
+  //s->set_whitebal(s, 1);  // 0 = Off, 1 = On
+  //自動ホワイトバランスゲインの設定をすると暴走します
+  //s->set_awb_gain(s, 1);  // 自動ホワイトバランスゲインを有効にする
+
+  Serial.println("ホワイトバランスのモード設定");
+  s->set_wb_mode(s, 0);  // 0	Auto	自動ホワイトバランス, 1	Sunny	晴天, 2	Cloudy	曇り, 3	Office	オフィス照明（蛍光灯）, 4	Home	家庭照明（白熱灯）
+
+  //s->set_vflip(s, 0);  // 0 = 正常, 1 = 上下反転
+  //s->set_hmirror(s, 0);  // 0 = 正常, 1 = 左右反転
 
   // 他の設定例
   // s->set_brightness(s, 1);  // -2 to 2
   // s->set_contrast(s, 1);    // -2 to 2
   // s->set_saturation(s, 1);  // -2 to 2
 
-  //16枚を空撮影、ホワイトバランスを安定されるため
-  for (int i = 0; i < 16; i++) {
+  //4枚を空撮影、ホワイトバランスを安定されるため
+  Serial.println("4枚を空撮影、ホワイトバランスを安定されるため");
+  for (int i = 0; i < 4; i++) {
     // カメラから画像を取得
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
@@ -171,6 +224,8 @@ uint32_t captureFrames(uint32_t frameCount, uint32_t fps, uint32_t* width, uint3
         Serial.println("フレームバッファの取得に失敗しました");
         continue;
       }
+      digitalWrite(LED_GPIO_NUM, LOW);  //点灯
+
 
       // フレームを個別ファイルに保存
       String fileName = folder + "/frame" + String(capturedFrames) + ".jpg";
@@ -195,8 +250,8 @@ uint32_t captureFrames(uint32_t frameCount, uint32_t fps, uint32_t* width, uint3
         }
       }
       capturedFrames++;
+      digitalWrite(LED_GPIO_NUM, HIGH);  //消灯
     }
   }
-
   return maxsize;
 }

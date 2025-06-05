@@ -1,0 +1,1 @@
+./ffmpeg -framerate 5 -i frame%d.jpg -c:v mjpeg -q:v 2 output.avi

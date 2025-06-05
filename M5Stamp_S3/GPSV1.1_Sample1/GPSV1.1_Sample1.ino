@@ -5,7 +5,7 @@ void setup() {
   Serial2.begin(115200, SERIAL_8N1, 44, 43);
 
   delay(1500);
-  Serial.println("GPS Test");
+  Serial.println("GPS V1.1 Sample");
 }
 
 void loop() {

@@ -3,11 +3,34 @@
 #include <SD.h>
 #include <SPI.h>
 
+// ===================
+// Select camera model
+// ===================
+//#define CAMERA_MODEL_WROVER_KIT // Has PSRAM
+// #define CAMERA_MODEL_ESP_EYE  // Has PSRAM
+//#define CAMERA_MODEL_ESP32S3_EYE // Has PSRAM
+//#define CAMERA_MODEL_M5STACK_PSRAM // Has PSRAM
+//#define CAMERA_MODEL_M5STACK_V2_PSRAM // M5Camera version B Has PSRAM
+//#define CAMERA_MODEL_M5STACK_WIDE // Has PSRAM
+//#define CAMERA_MODEL_M5STACK_ESP32CAM // No PSRAM
+//#define CAMERA_MODEL_M5STACK_UNITCAM // No PSRAM
+#define CAMERA_MODEL_M5STACK_CAMS3_UNIT  // Has PSRAM
+//#define CAMERA_MODEL_AI_THINKER // Has PSRAM
+//#define CAMERA_MODEL_TTGO_T_JOURNAL // No PSRAM
+//#define CAMERA_MODEL_XIAO_ESP32S3 // Has PSRAM
+// ** Espressif Internal Boards **
+//#define CAMERA_MODEL_ESP32_CAM_BOARD
+//#define CAMERA_MODEL_ESP32S2_CAM_BOARD
+//#define CAMERA_MODEL_ESP32S3_CAM_LCD
+//#define CAMERA_MODEL_DFRobot_FireBeetle2_ESP32S3 // Has PSRAM
+//#define CAMERA_MODEL_DFRobot_Romeo_ESP32S3 // Has PSRAM
 #include "camera_pins.h"
+
 #include "camera.h"
 
 bool cameraInit() {
   // カメラ初期化
+
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -28,14 +51,50 @@ bool cameraInit() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
-  config.pixel_format = PIXFORMAT_JPEG;
-  //config.frame_size = FRAMESIZE_QVGA;  // フレームサイズをQVGAに設定
-  config.frame_size = FRAMESIZE_VGA;
-  //config.frame_size = FRAMESIZE_XGA;
-  config.jpeg_quality = 12;  // JPEG品質を調整
-  config.fb_count = 2;
-  config.grab_mode = CAMERA_GRAB_LATEST;
+#ifdef CAMERA_MODEL_M5STACK_CAMS3_UNIT
+  config.frame_size = FRAMESIZE_QVGA;
+  //config.frame_size = FRAMESIZE_VGA;
+#else
+  config.frame_size = FRAMESIZE_UXGA;
+#endif
+  config.pixel_format = PIXFORMAT_JPEG;  // for streaming
+  // config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
+  config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  config.fb_location = CAMERA_FB_IN_PSRAM;
+  config.jpeg_quality = 12;
+  config.fb_count = 1;
 
+  // if PSRAM IC present, init with UXGA resolution and higher JPEG quality
+  //                      for larger pre-allocated frame buffer.
+  if (config.pixel_format == PIXFORMAT_JPEG) {
+    if (psramFound()) {
+      config.jpeg_quality = 10;
+#ifdef CAMERA_MODEL_M5STACK_CAMS3_UNIT
+      config.fb_count = 1;
+#else
+      config.fb_count = 2;
+#endif
+      config.grab_mode = CAMERA_GRAB_LATEST;
+    } else {
+      // Limit the frame size when PSRAM is not available
+      config.frame_size = FRAMESIZE_SVGA;
+      config.fb_location = CAMERA_FB_IN_DRAM;
+    }
+  } else {
+    // Best option for face detection/recognition
+    config.frame_size = FRAMESIZE_240X240;
+#if CONFIG_IDF_TARGET_ESP32S3
+    config.fb_count = 2;
+#endif
+  }
+
+#if defined(CAMERA_MODEL_ESP_EYE)
+  pinMode(13, INPUT_PULLUP);
+  pinMode(14, INPUT_PULLUP);
+#endif
+
+  // camera init
+  Serial.println("カメラの初期化をします");
   while (true) {
     if (esp_camera_init(&config) != ESP_OK) {
       Serial.println("カメラの初期化に失敗しました");
@@ -47,25 +106,56 @@ bool cameraInit() {
   }
 
   // カメラセンサーの取得
+  Serial.println("カメラセンサーを取得します");
   sensor_t* s = esp_camera_sensor_get();
   if (s == NULL) {
     Serial.println("センサーの取得に失敗しました");
     return false;
   }
 
-  // ホワイトバランスを自動に設定
-  s->set_whitebal(s, 1);  // 0 = Off, 1 = On
+  // initial sensors are flipped vertically and colors are a bit saturated
+  if (s->id.PID == OV3660_PID) {
+    Serial.println("OV3660_PIDです");
+    s->set_vflip(s, 1);        // flip it back
+    s->set_brightness(s, 1);   // up the brightness just a bit
+    s->set_saturation(s, -2);  // lower the saturation
+  }
+  // drop down frame size for higher initial frame rate
+  if (config.pixel_format == PIXFORMAT_JPEG) {
+    Serial.println("PIXFORMAT_JPEGです");
+    s->set_framesize(s, FRAMESIZE_QVGA);
+  }
 
-  s->set_vflip(s, 0);  // 0 = 正常, 1 = 上下反転
-                       //s->set_hmirror(s, 0);  // 0 = 正常, 1 = 左右反転
+#if defined(CAMERA_MODEL_M5STACK_WIDE) || defined(CAMERA_MODEL_M5STACK_ESP32CAM)
+  Serial.println("CAMERA_MODEL_M5STACK_WIDE || CAMERA_MODEL_M5STACK_ESP32CAM です");
+  s->set_vflip(s, 1);
+  s->set_hmirror(s, 1);
+#endif
+
+#if defined(CAMERA_MODEL_ESP32S3_EYE)
+  Serial.println("CAMERA_MODEL_ESP32S3_EYE です");
+  s->set_vflip(s, 1);
+#endif
+
+  // ホワイトバランスの設定をすると暴走します
+  //s->set_whitebal(s, 1);  // 0 = Off, 1 = On
+  //自動ホワイトバランスゲインの設定をすると暴走します
+  //s->set_awb_gain(s, 1);  // 自動ホワイトバランスゲインを有効にする
+
+  Serial.println("ホワイトバランスのモード設定");
+  s->set_wb_mode(s, 0);  // 0	Auto	自動ホワイトバランス, 1	Sunny	晴天, 2	Cloudy	曇り, 3	Office	オフィス照明（蛍光灯）, 4	Home	家庭照明（白熱灯）
+
+  //s->set_vflip(s, 0);  // 0 = 正常, 1 = 上下反転
+  //s->set_hmirror(s, 0);  // 0 = 正常, 1 = 左右反転
 
   // 他の設定例
   // s->set_brightness(s, 1);  // -2 to 2
   // s->set_contrast(s, 1);    // -2 to 2
   // s->set_saturation(s, 1);  // -2 to 2
 
-  //16枚を空撮影、ホワイトバランスを安定されるため
-  for (int i = 0; i < 16; i++) {
+  //4枚を空撮影、ホワイトバランスを安定されるため
+  Serial.println("4枚を空撮影、ホワイトバランスを安定されるため");
+  for (int i = 0; i < 4; i++) {
     // カメラから画像を取得
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
