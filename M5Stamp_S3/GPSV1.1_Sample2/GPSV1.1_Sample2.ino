@@ -22,7 +22,8 @@ void loop() {
   {
     lastRead = now;
 
-    if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()) {
+    if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid())
+    {
       int utcHour = gps.time.hour();
       int utcMinute = gps.time.minute();
       int utcSecond = gps.time.second();
