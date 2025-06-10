@@ -1,22 +1,73 @@
-#include <Arduino_BMI270_BMM150.h>
+
 #include <Adafruit_BMP280.h>
+#include <Wire.h>
+#include <SparkFun_BMI270_Arduino_Library.h>
 
 Adafruit_BMP280 bmp;  // I2C
 Adafruit_Sensor *bmp_temp = bmp.getTemperatureSensor();
 Adafruit_Sensor *bmp_pressure = bmp.getPressureSensor();
+BMI270 imu;
+
+// I2C address selection
+uint8_t i2cAddress = BMI2_I2C_PRIM_ADDR;  // 0x68
+//uint8_t i2cAddress = BMI2_I2C_SEC_ADDR; // 0x69
 
 //#define SEALEVELPRESSURE_HPA 1013.25
 #define SEALEVELPRESSURE_HPA 1009.0
 
 void setup() {
   Serial.begin(115200);
+  Serial1.begin(19200);
   delay(15000);
   Serial.println(F("IMU PRO Sample"));
 
-  if (!IMU.begin()) {
-    Serial.println(F("Failed to initialize BMI270!"));
-    while (1)
-      ;
+  // Initialize the I2C library
+  Wire.begin();
+
+  while (imu.beginI2C(i2cAddress) != BMI2_OK) {
+    // Not connected, inform user
+    Serial.println("Error: BMI270 not connected, check wiring and I2C address!");
+
+    // Wait a bit to see if connection is established
+    delay(1000);
+  }
+
+  int8_t err = BMI2_OK;
+
+  // Set accelerometer config
+  bmi2_sens_config accelConfig;
+  accelConfig.type = BMI2_ACCEL;
+  accelConfig.cfg.acc.odr = BMI2_ACC_ODR_50HZ;
+  accelConfig.cfg.acc.bwp = BMI2_ACC_OSR4_AVG1;
+  accelConfig.cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
+  accelConfig.cfg.acc.range = BMI2_ACC_RANGE_8G;
+  err = imu.setConfig(accelConfig);
+
+  // Set gyroscope config
+  bmi2_sens_config gyroConfig;
+  gyroConfig.type = BMI2_GYRO;
+  gyroConfig.cfg.gyr.odr = BMI2_GYR_ODR_50HZ;
+  gyroConfig.cfg.gyr.bwp = BMI2_GYR_OSR4_MODE;
+  gyroConfig.cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
+  gyroConfig.cfg.gyr.ois_range = BMI2_GYR_OIS_250;
+  gyroConfig.cfg.gyr.range = BMI2_GYR_RANGE_125;
+  gyroConfig.cfg.gyr.noise_perf = BMI2_PERF_OPT_MODE;
+  err = imu.setConfig(gyroConfig);
+
+  // Check whether the config settings above were valid
+  while (err != BMI2_OK) {
+    // Not valid, determine which config was the problem
+    if (err == BMI2_E_ACC_INVALID_CFG) {
+      Serial.println("Accelerometer config not valid!");
+    } else if (err == BMI2_E_GYRO_INVALID_CFG) {
+      Serial.println("Gyroscope config not valid!");
+    } else if (err == BMI2_E_ACC_GYR_INVALID_CFG) {
+      Serial.println("Both configs not valid!");
+    } else {
+      Serial.print("Unknown error: ");
+      Serial.println(err);
+    }
+    delay(1000);
   }
 
   if (!bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID)) {
@@ -24,13 +75,6 @@ void setup() {
     while (1)
       ;
   }
-
-  Serial.print("Accelerometer sample rate = ");
-  Serial.print(IMU.accelerationSampleRate());
-  Serial.println(" Hz");
-  Serial.print("Gyroscope sample rate = ");
-  Serial.print(IMU.gyroscopeSampleRate());
-  Serial.println(" Hz");
 
   /* Default settings from datasheet. */
   bmp.setSampling(
@@ -55,13 +99,7 @@ float Gz = 0;
 float Temp, Press, Alti;
 
 void loop() {
-  if (IMU.accelerationAvailable()) {
-    IMU.readAcceleration(Ax, Ay, Az);
-  }
-
-  if (IMU.gyroscopeAvailable()) {
-    IMU.readGyroscope(Gx, Gy, Gz);
-  }
+  imu.getSensorData();
 
   Temp = bmp.readTemperature();
   Press = bmp.readPressure();
@@ -69,10 +107,11 @@ void loop() {
   Alti = calculateAltitude(Press, Temp);
 
   String log = String(millis() / 1000.0, 2) + ",";
-  log += String(Ax) + "," + String(Ay) + "," + String(Az) + ",";
-  log += String(Gx) + "," + String(Gy) + "," + String(Gz) + ",";
+  log += String(imu.data.accelX) + "," + String(imu.data.accelY) + "," + String(imu.data.accelZ) + ",";
+  log += String(imu.data.gyroX) + "," + String(imu.data.gyroY) + "," + String(imu.data.gyroZ) + ",";
   log += String(Temp) + "," + String(Press) + "," + String(Alti) + ",";
   Serial.println(log);
+  Serial1.println(log);
 
   delay(250);
 }
